@@ -1,4 +1,4 @@
-function [x_esti, llr_R]= SoSCL_decoder(llr, L_path, K, frozen_bits, lambda_offset, llr_layer_vec, bit_layer_vec)
+function [x_esti, llr_R]= SSCANL_decoder(llr, L_path, K, frozen_bits, lambda_offset, llr_layer_vec, bit_layer_vec)
 N = length(llr);
 n = log2(N);
 L=zeros(N,(n+1)*L_path);
@@ -198,19 +198,9 @@ end
 path_num = path_ordered(1);%取排序最小的那个在原来PM数组中占第几列
 % decoder = u(:, path_num);
 x_esti=x(:,path_num);
-% PM_normal=PM./sum(PM);
-% PM_normal=1./PM_normal;
-% PM_normal=PM_normal/sum(PM_normal);
 w=1./exp(PM);
 PM_normal=w./sum(w);
 llr_R=zeros(N,1);
-% for i=1:L_path
-%     if PM(path_num)==0
-%         llr_R=R(:,1+(n+1)*(path_num-1));
-%     else
-%         llr_R=llr_R+PM_normal(i)*R(:,1+(n+1)*(i-1));
-%     end
-% end
 for i=1:N
     fenzi=0;
     fenmu=0;
@@ -220,8 +210,6 @@ for i=1:N
         elseif R(i,1+(n+1)*(l-1))<-35.9
                 R(i,1+(n+1)*(l-1))=-35.9;
         end
-%             fenzi1=fenzi1+PM_normal(l)*exp(R(i,1+(n+1)*(l-1)))/(1+exp(R(i,1+(n+1)*(l-1))));
-%             fenmu1=fenmu1+PM_normal(l)/(1+exp(R(i,1+(n+1)*(l-1))));
             fenzi=fenzi+PM_normal(l)*real(1+tanh(R(i,1+(n+1)*(l-1))/2));
             fenmu=fenmu+PM_normal(l)*real(1-tanh(R(i,1+(n+1)*(l-1))/2));
     end

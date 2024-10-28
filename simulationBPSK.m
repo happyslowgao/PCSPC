@@ -32,6 +32,14 @@ frozen_bits = ones(N , 1);
 frozen_bits(info_bits) = 0;
 info_bits_logical = logical(mod(frozen_bits + 1, 2));
 
+% load N256K128.mat;
+% frozen_number=find(frozen_bits==1)';
+% info_bits=find(frozen_bits==0)';
+% frozen=frozen_bits_crc(1:N-K);
+% frozen_bits=zeros(N,1);
+% frozen_bits(frozen) = 1;
+% info_bits_logical = logical(mod(frozen_bits + 1, 2));
+
 %beta expansion
 % beta = sqrt(sqrt(2));
 % channels = beta_expansion_polar_code_construction(N, beta);
@@ -69,9 +77,9 @@ for i_run = 1 : max_runs
     end
     %To avoid redundancy
     info  = rand(K - crc_length, 1) > 0.5;
+%     info_with_crc = [info; mod(crc_parity_check * info, 2)];
     u1 = zeros(N, 1);
     u2 = zeros(N, 1);
-    %SPC
     u1(info_bits_logical) = info;
     x1 = polar_encoder(u1, lambda_offset, llr_layer_vec);
     x1(frozen_number)=0;
@@ -92,6 +100,7 @@ for i_run = 1 : max_runs
     for i_ebno = 1 : length(ebno_vec)
         sigma = 1/sqrt(2 * R) * 10^(-ebno_vec(i_ebno)/20);
         y_noise = bpsk + noise*sigma;
+%         llr = 2/sigma^2*y_noise;
         for i_list = 2 : length(list_size_vec)
             if i_list ~= 1
                 if bler(i_ebno, i_list) == max_err
@@ -116,8 +125,8 @@ for i_run = 1 : max_runs
             end
 %             if list_size_vec(i_list) == 1
                 L_path=8;
-                I=6; %iteration numbers
-                Imax=8; %I_SCAN
+                I=6;
+                Imax=8;
                 ys=y_noise(1:K);
                 y1=y_noise(K+1:N);
                 y2=y_noise(N+1:2*N-K);
@@ -129,35 +138,27 @@ for i_run = 1 : max_runs
                     z1(frozen_number)=2/sigma^2*y1;
                     llr_z1=z1;
                     llr_z1(info_bits)=llr_z1(info_bits)+a1;
-                    %Soft list decoder=SCLBP
                     [x1_esti, l1]=SCLBP_decoder(llr_z1, L_path, K, frozen_bits, lambda_offset, llr_layer_vec, bit_layer_vec,M_up,M_down);
-%                     [x1_esti, l1]= SoSCL_decoder(llr_z1, L_path, K, frozen_bits, lambda_offset, llr_layer_vec, bit_layer_vec);
+%                     [x1_esti, l1]= SSCANL_decoder(llr_z1, L_path, K, frozen_bits, lambda_offset, llr_layer_vec, bit_layer_vec);
                     x1_esti=polar_encoder(x1_esti, lambda_offset, llr_layer_vec);
                     polar_info_esti=x1_esti(info_bits);
-                    for i_code=1:K
-                        llr_bf=polar_info_esti(i_code)-sign(l1(i_code));
-                        if llr_bf==1||llr_bf==0
-                            l1(i_code)=-l1(i_code);
-                        end
-                    end
-                    e1=l1;%产生外部信息
+                    e1=l1;
                     a2=e1(interleaver);%交织
                     z2=zeros(N,1);
                     z2(info_bits)=2/sigma^2*ys(interleaver);
                     z2(frozen_number)=2/sigma^2*y2;
                     llr_z2=z2;
                     llr_z2(info_bits)=llr_z2(info_bits)+a2;
-                    %Soft list decoder=SCLBP
                     [x2_esti, l2]=SCLBP_decoder(llr_z2, L_path, K, frozen_bits, lambda_offset, llr_layer_vec, bit_layer_vec,M_up,M_down);
-%                     [x2_esti, l2]= SoSCL_decoder(llr_z2, L_path, K, frozen_bits, lambda_offset, llr_layer_vec, bit_layer_vec);
+%                     [x2_esti, l2]= SSCANL_decoder(llr_z2, L_path, K, frozen_bits, lambda_offset, llr_layer_vec, bit_layer_vec);
                     x2_esti=polar_encoder(x2_esti, lambda_offset, llr_layer_vec);
                     polar_info_esti_inter=x2_esti(info_bits);
-                    for i_code=1:K
-                        llr_bf=polar_info_esti_inter(i_code)-sign(l2(i_code));
-                        if llr_bf==1||llr_bf==0
-                            l2(i_code)=-l2(i_code);
-                        end
-                    end
+%                     for i_code=1:K
+%                         llr_bf=polar_info_esti_inter(i_code)-sign(l2(i_code));
+%                         if llr_bf==1||llr_bf==0
+%                             l2(i_code)=-l2(i_code);
+%                         end
+%                     end
                     e2=l2;
                     polar_info_esti(interleaver)=polar_info_esti_inter;
                     a1(interleaver)=e2;

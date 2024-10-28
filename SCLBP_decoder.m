@@ -211,4 +211,12 @@ L(:, m + 1) = llr;
     end
 info_bits=find(frozen_bits==0);
 llr_R=R(info_bits,m+1);
+x2_esti=polar_encoder(x_esti, lambda_offset, llr_layer_vec);
+polar_info_esti_inter=x2_esti(info_bits);
+for i_code=1:K
+    llr_bf=polar_info_esti_inter(i_code)-sign(llr_R(i_code));
+    if llr_bf==1||llr_bf==0
+       llr_R(i_code)=-llr_R(i_code);
+    end
+end
 end
